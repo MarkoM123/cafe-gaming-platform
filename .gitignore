@@ -1,0 +1,21 @@
+# node
+node_modules
+.pnpm-store
+
+# env
+.env
+
+# prisma
+prisma/dev.db
+
+# build
+dist
+.next
+out
+
+# logs
+npm-debug.log*
+pnpm-debug.log*
+
+# docker
+pgdata
