@@ -31,5 +31,6 @@ jobs:
 
 
       - name: Backend type check
-        run: pnpm exec tsc --noEmit
+        run: pnpm exec tsc -p tsconfig.json --noEmit
         working-directory: backend
+
