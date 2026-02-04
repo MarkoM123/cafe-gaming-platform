@@ -29,9 +29,6 @@ jobs:
         run: pnpm install
         working-directory: backend
 
-      - name: Prisma generate
-        run: pnpm exec prisma generate
-        working-directory: backend
 
       - name: Backend type check
         run: pnpm exec tsc --noEmit
