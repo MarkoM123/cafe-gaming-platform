@@ -1,6 +1,7 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 type MenuItem = {
   id: string;
@@ -16,6 +17,7 @@ type MenuCategory = {
 };
 
 export default function PublicMenuPage() {
+  const router = useRouter();
   const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
   const [menu, setMenu] = useState<MenuCategory[]>([]);
   const [loading, setLoading] = useState(true);
@@ -52,6 +54,12 @@ export default function PublicMenuPage() {
       <div className="public-menu-shell public-menu-shell-gridy">
         <header className="public-menu-hero-gridy">
           <div>
+            <button
+              className="btn tiny ghost"
+              onClick={() => (window.history.length > 1 ? router.back() : router.push('/'))}
+            >
+              Nazad
+            </button>
             <div className="eyebrow">Cafe Igraonica</div>
             <h1>Jelovnik</h1>
             <p className="muted">Sveže, glasno i jasno.</p>
@@ -104,3 +112,5 @@ export default function PublicMenuPage() {
     </div>
   );
 }
+
+

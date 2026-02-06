@@ -1,6 +1,7 @@
 ﻿'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 type Game = { id: string; name: string };
 type Station = { id: string; name: string };
@@ -48,6 +49,7 @@ const toLocalDateKey = (value: string | Date) => {
 };
 
 export default function ReservePage() {
+  const router = useRouter();
   const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
   const [games, setGames] = useState<Game[]>([]);
@@ -247,10 +249,16 @@ export default function ReservePage() {
       <div className="reserve-sticker sticker-monitor" />
       <div className="reserve-sticker sticker-controller" />
       <div className="reservation-shell">
-      <div className="reservation-header">
-        <h1>Rezerviši igru</h1>
-        <p className="muted">Odaberi računar, vreme i potvrdi termin.</p>
-      </div>
+        <div className="reservation-header">
+          <button
+            className="btn tiny ghost"
+            onClick={() => (window.history.length > 1 ? router.back() : router.push('/'))}
+          >
+            Nazad
+          </button>
+          <h1>Rezerviši igru</h1>
+          <p className="muted">Odaberi računar, vreme i potvrdi termin.</p>
+        </div>
 
       <div className="reserve-grid">
         <section className="reserve-form">
