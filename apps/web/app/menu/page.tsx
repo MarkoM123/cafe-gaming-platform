@@ -61,7 +61,7 @@ export default function PublicMenuPage() {
               Nazad
             </button>
             <div className="eyebrow">Cafe Igraonica</div>
-            <h1>Jelovnik</h1>
+            <h1>Meni</h1>
             <p className="muted">Sveže, glasno i jasno.</p>
           </div>
           <div className="public-menu-hero-cards">

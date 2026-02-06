@@ -81,6 +81,19 @@ h3 {
   animation: fadeIn 800ms ease;
 }
 
+.landing-topbar {
+  position: relative;
+  z-index: 1;
+  max-width: 1140px;
+  margin: 0 auto 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
 .orb {
   position: absolute;
   border-radius: 999px;

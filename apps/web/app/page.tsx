@@ -26,6 +26,13 @@ export default function LandingPage() {
       <div className="orb orb-c" />
       <div className="grid-floor" />
 
+      <div className="landing-topbar">
+        <span>Radno vreme: 08:00 – 00:00</span>
+        <button className="btn tiny ghost" onClick={toggleTheme}>
+          {theme === 'dark' ? 'Light varijanta' : 'Dark varijanta'}
+        </button>
+      </div>
+
       <header className="landing-hero">
         <div className="hero-copy">
           <span className="eyebrow">Cafe & Igraonica</span>
@@ -214,12 +221,7 @@ export default function LandingPage() {
           <div className="footer-brand">Pixel Cafe & Igraonica</div>
           <div className="muted">Skeniraj • Poruči • Igraj</div>
         </div>
-        <div className="footer-meta">
-          <span>Radno vreme: 08:00 – 00:00</span>
-          <button className="btn tiny ghost" onClick={toggleTheme}>
-            {theme === 'dark' ? 'Light varijanta' : 'Dark varijanta'}
-          </button>
-        </div>
+        <div className="footer-meta">Rezerviši • Dođi • Igraj</div>
       </footer>
     </main>
   );
