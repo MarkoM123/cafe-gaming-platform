@@ -16,10 +16,149 @@ model User {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  auditLogs AuditLog[]
 }
 
 enum UserRole {
   ADMIN
   STAFF
   GAMER
+}
+
+model Table {
+  id        String         @id @default(uuid())
+  code      String         @unique
+  name      String?
+  isActive  Boolean        @default(true)
+  sessions  TableSession[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model TableSession {
+  id        String   @id @default(uuid())
+  tableId   String
+  table     Table    @relation(fields: [tableId], references: [id])
+  startedAt DateTime @default(now())
+  endedAt   DateTime?
+  lastActivityAt DateTime @default(now())
+
+  orders    Order[]
+}
+
+model MenuCategory {
+  id        String     @id @default(uuid())
+  name      String
+  sortOrder Int        @default(0)
+  items     MenuItem[]
+}
+
+model MenuItem {
+  id           String       @id @default(uuid())
+  categoryId   String
+  category     MenuCategory @relation(fields: [categoryId], references: [id])
+  name         String
+  description  String?
+  priceCents   Int
+  isActive     Boolean      @default(true)
+
+  orderItems   OrderItem[]
+}
+
+model GameStation {
+  id        String        @id @default(uuid())
+  name      String
+  isActive  Boolean       @default(true)
+  reservations Reservation[]
+}
+
+model Game {
+  id        String        @id @default(uuid())
+  name      String
+  isActive  Boolean       @default(true)
+  reservations Reservation[]
+}
+
+model Reservation {
+  id          String       @id @default(uuid())
+  stationId   String
+  station     GameStation  @relation(fields: [stationId], references: [id])
+  gameId      String?
+  game        Game?        @relation(fields: [gameId], references: [id])
+  customerName String
+  customerPhone String
+  startsAt    DateTime
+  endsAt      DateTime
+  createdAt   DateTime @default(now())
+  deletedAt   DateTime?
+
+  @@index([stationId, startsAt, endsAt])
+  @@index([deletedAt])
+}
+
+model Order {
+  id             String       @id @default(uuid())
+  tableSessionId String
+  tableSession   TableSession @relation(fields: [tableSessionId], references: [id])
+  status         OrderStatus  @default(NEW)
+  totalCents     Int
+  idempotencyKey String?      @unique
+  orderNumber    Int
+  orderDateKey   String
+
+  items          OrderItem[]
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  deletedAt      DateTime?
+
+  @@index([deletedAt, createdAt])
+  @@unique([orderDateKey, orderNumber])
+}
+
+model OrderDailyCounter {
+  dateKey    String @id
+  nextNumber Int
+}
+
+model OrderItem {
+  id           String   @id @default(uuid())
+  orderId      String
+  order        Order    @relation(fields: [orderId], references: [id])
+  menuItemId   String
+  menuItem     MenuItem @relation(fields: [menuItemId], references: [id])
+  quantity     Int
+  unitPriceCents Int
+  totalCents   Int
+}
+
+enum OrderStatus {
+  NEW
+  IN_PROGRESS
+  DONE
+  CANCELED
+}
+
+model OperatingHour {
+  id        String   @id @default(uuid())
+  dayOfWeek Int      @unique
+  openTime  String
+  closeTime String
+  isClosed  Boolean  @default(false)
+  updatedAt DateTime @updatedAt
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id])
+  action     String
+  entityType String
+  entityId   String
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  @@index([entityType, entityId])
+  @@index([createdAt])
 }

@@ -1,47 +1,88 @@
-# STATUS
+STATUS
 
-## Testiranje (tačan redosled)
+Backend endpoints (Feb 5, 2026)
 
-1) Restart backend:
-`pnpm ts-node src/main.ts`
+Auth
+- POST /auth/register
+- POST /auth/login
+- GET /auth/me
 
-2) Register prvog korisnika (postaje ADMIN) — pokreni jednu po jednu liniju:
-`$body = @{ email="admin@demo.com"; password="secret123" } | ConvertTo-Json`
-`$admin = Invoke-RestMethod -Method POST -Uri http://localhost:3001/auth/register -ContentType "application/json" -Body $body`
-`$adminToken = $admin.access_token`
+Users
+- POST /users
+- GET /users/me
 
-Ako dobiješ `409 Email already in use`, ADMIN već postoji — uradi login umesto register:
-`$body = @{ email="admin@demo.com"; password="secret123" } | ConvertTo-Json`
-`$admin = Invoke-RestMethod -Method POST -Uri http://localhost:3001/auth/login -ContentType "application/json" -Body $body`
-`$adminToken = $admin.access_token`
+Orders
+- POST /orders
+- GET /orders
+- GET /orders/summary
+- GET /orders/top-items
+- GET /orders/stream
+- PATCH /orders/:id/status
+- PATCH /orders/:id/archive
+- GET /orders/:id/public?tableCode=
+- GET /orders/:id/stream?tableCode=
 
-3) Kreiraj STAFF preko ADMIN-a:
-`$staffBody = @{ email="staff@demo.com"; password="secret123"; role="STAFF" } | ConvertTo-Json`
-`Invoke-RestMethod -Method POST -Uri http://localhost:3001/users -ContentType "application/json" -Body $staffBody -Headers @{ Authorization = "Bearer $adminToken" }`
+QR
+- GET /qr/:tableCode
 
-4) Login kao STAFF:
-`$body = @{ email="staff@demo.com"; password="secret123" } | ConvertTo-Json`
-`$staff = Invoke-RestMethod -Method POST -Uri http://localhost:3001/auth/login -ContentType "application/json" -Body $body`
-`$staffToken = $staff.access_token`
+Menu
+- GET /menu (requires tableCode)
+- GET /menu/all
+- POST /menu/categories
+- POST /menu/items
+- PATCH /menu/items/:id/availability
 
-5) Testovi:
-`Invoke-RestMethod -Uri http://localhost:3001/users -Headers @{ Authorization = "Bearer $adminToken" }`
-`Invoke-RestMethod -Uri http://localhost:3001/orders -Headers @{ Authorization = "Bearer $staffToken" }`
+Games
+- GET /games
+- GET /game-stations
 
-## Napomena (bootstrap admin)
-- Ako već postoji `admin@demo.com` sa rolom `GAMER`, prvim login-om biće automatski prebačen u `ADMIN`.
+Reservations
+- POST /reservations
+- GET /reservations
+- GET /reservations/top-games
+- PATCH /reservations/:id/archive
 
-## Sada uradi
-1) Restart backend:
-`pnpm ts-node src/main.ts`
+Admin / Config (Feb 5, 2026)
+- PATCH /menu/items/:id (ADMIN only)
+- GET /games/all (ADMIN/STAFF)
+- POST /games (ADMIN)
+- PATCH /games/:id (ADMIN)
+- GET /game-stations/all (ADMIN/STAFF)
+- POST /game-stations (ADMIN)
+- PATCH /game-stations/:id (ADMIN)
+- GET /settings/hours
+- PATCH /settings/hours (ADMIN)
+- GET /audit (ADMIN)
+- GET /tables (ADMIN/STAFF)
 
-2) Login kao admin:
-`$body = @{ email="admin@demo.com"; password="secret123" } | ConvertTo-Json`
-`$adminLogin = Invoke-RestMethod -Method POST -Uri http://localhost:3001/auth/login -ContentType "application/json" -Body $body`
-`$adminToken = $adminLogin.access_token`
+Seed + reset (Feb 5, 2026)
+- pnpm seed
+- pnpm reset:dev
 
-3) Test `/users`:
-`Invoke-RestMethod -Uri http://localhost:3001/users -Headers @{ Authorization = "Bearer $adminToken" }`
+Admin UI (Feb 5, 2026)
+- /staff/menu (edit price + enable/disable)
+- /staff/games (edit games/stations)
+- /staff/hours (edit operating hours)
+- /staff/audit (audit log view)
+- /staff/qr (QR code generator per table)
 
-## Napomena (RolesGuard)
-- Uklonjen globalni `RolesGuard` (bio je pre `JwtAuthGuard`), sada se koristi samo preko `@UseGuards(JwtAuthGuard, RolesGuard)` na rutama.
+Demo accounts (seed)
+- admin@demo.com / admin123
+- staff@demo.com / staff123
+- demo@demo.com / demo123
+
+Ops and stability (Feb 5, 2026)
+- Rate limiting: /auth/login and /orders
+- Audit log for order status changes and archival
+- Soft delete for orders and reservations
+- Reservation duration min/max enforced
+
+Run notes (Feb 5, 2026)
+- If availability shows wrong after refresh, restart backend to load new GET /reservations route.
+
+Deployment and scaling (Feb 5, 2026)
+- Docker compose includes: postgres, backend, web
+- Backend build: tsc -> dist, runtime uses migrate deploy
+- Frontend build: next build, runtime next start
+- Env example: .env.example
+- Backup: docker/backup.ps1 and docker/backup.sh (pg_dump to docker/backups)
