@@ -62,6 +62,7 @@ export class ReservationsController {
       durationMinutes?: number;
       customerName?: string;
       customerPhone?: string;
+      tableCode?: string;
     },
     @CurrentUser() user?: CurrentUserPayload,
   ) {
@@ -80,6 +81,21 @@ export class ReservationsController {
     @CurrentUser() user?: CurrentUserPayload,
   ) {
     return this.reservationsService.stopGame(id, {
+      id: user?.sub,
+      email: user?.email,
+      role: user?.role,
+    });
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.STAFF)
+  @Patch(':id/extend')
+  extendGame(
+    @Param('id') id: string,
+    @Body() body: { minutes: number },
+    @CurrentUser() user?: CurrentUserPayload,
+  ) {
+    return this.reservationsService.extendReservation(id, body.minutes, {
       id: user?.sub,
       email: user?.email,
       role: user?.role,

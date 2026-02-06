@@ -166,7 +166,7 @@ export class OrdersController {
     @Body() dto: UpdateOrderStatusDto,
     @CurrentUser() user?: CurrentUserPayload,
   ) {
-    return this.ordersService.updateStatus(id, dto.status, {
+    return this.ordersService.updateStatus(id, dto.status, dto.reason, {
       id: user?.sub,
       email: user?.email,
       role: user?.role,
@@ -178,10 +178,10 @@ export class OrdersController {
   @Patch(':id/close')
   closeOrder(
     @Param('id') id: string,
-    @Body() body: { paidCents: number },
+    @Body() body: { paidCents: number; paymentMethod: 'CASH' | 'CARD' | 'MIXED' },
     @CurrentUser() user?: CurrentUserPayload,
   ) {
-    return this.ordersService.closeOrder(id, body.paidCents, {
+    return this.ordersService.closeOrder(id, body.paidCents, body.paymentMethod, {
       id: user?.sub,
       email: user?.email,
       role: user?.role,

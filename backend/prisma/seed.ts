@@ -206,19 +206,33 @@ const ensureGames = async () => {
 };
 
 const ensureTables = async () => {
-  const count = await prisma.table.count();
-  if (count > 0) return;
+  const desired = [
+    { code: 'T1', name: 'Sto T1' },
+    { code: 'T2', name: 'Sto T2' },
+    { code: 'T3', name: 'Sto T3' },
+    { code: 'T4', name: 'Sto T4' },
+    { code: 'T5', name: 'Sto T5' },
+    { code: 'T6', name: 'Sto T6' },
+    { code: 'A1', name: 'Sto A1' },
+    { code: 'A2', name: 'Sto A2' },
+    { code: 'A3', name: 'Sto A3' },
+    { code: 'B1', name: 'Sto B1' },
+    { code: 'B2', name: 'Sto B2' },
+    { code: 'C1', name: 'Sto C1' },
+  ];
 
-  await prisma.table.createMany({
-    data: [
-      { code: 'A1', name: 'Sto A1', isActive: true },
-      { code: 'A2', name: 'Sto A2', isActive: true },
-      { code: 'A3', name: 'Sto A3', isActive: true },
-      { code: 'B1', name: 'Sto B1', isActive: true },
-      { code: 'B2', name: 'Sto B2', isActive: true },
-      { code: 'C1', name: 'Sto C1', isActive: true },
-    ],
+  const existing = await prisma.table.findMany({
+    select: { code: true },
   });
+  const existingCodes = new Set(existing.map((t) => t.code));
+
+  const toCreate = desired
+    .filter((t) => !existingCodes.has(t.code))
+    .map((t) => ({ ...t, isActive: true }));
+
+  if (toCreate.length > 0) {
+    await prisma.table.createMany({ data: toCreate });
+  }
 };
 
 const ensureReservations = async () => {

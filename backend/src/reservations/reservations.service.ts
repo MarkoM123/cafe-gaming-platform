@@ -1,10 +1,14 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { CreateReservationDto } from './dto/create-reservation.dto';
+import { QrService } from '../qr/qr.service';
 
 @Injectable()
 export class ReservationsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private qrService: QrService,
+  ) {}
 
   async list(query: { stationId?: string; from?: string; to?: string }) {
     const { stationId, from, to } = query;
@@ -33,7 +37,7 @@ export class ReservationsService {
     });
   }
 
-  async create(dto: CreateReservationDto) {
+  async create(dto: CreateReservationDto, tableSessionId?: string) {
     const station = await this.prisma.gameStation.findUnique({
       where: { id: dto.stationId },
     });
@@ -99,6 +103,7 @@ export class ReservationsService {
       data: {
         stationId: dto.stationId,
         gameId: dto.gameId,
+        tableSessionId,
         customerName: dto.customerName,
         customerPhone: dto.customerPhone,
         startsAt,
@@ -150,12 +155,17 @@ export class ReservationsService {
       durationMinutes?: number;
       customerName?: string;
       customerPhone?: string;
+      tableCode?: string;
     },
     actor?: { id?: string; email?: string; role?: string },
   ) {
     const minutes = data.durationMinutes ?? 60;
     const startsAt = new Date();
     const endsAt = new Date(startsAt.getTime() + minutes * 60 * 1000);
+
+    const session = data.tableCode
+      ? await this.qrService.getOrCreateSession(data.tableCode)
+      : null;
 
     const dto: CreateReservationDto = {
       stationId: data.stationId,
@@ -166,7 +176,7 @@ export class ReservationsService {
       endsAt: endsAt.toISOString(),
     };
 
-    const created = await this.create(dto);
+    const created = await this.create(dto, session?.id);
 
     await this.prisma.auditLog.create({
       data: {
@@ -177,6 +187,7 @@ export class ReservationsService {
         metadata: {
           stationId: created.stationId,
           gameId: created.gameId,
+          tableCode: data.tableCode,
           actorEmail: actor?.email,
           actorRole: actor?.role,
         },
@@ -212,6 +223,13 @@ export class ReservationsService {
       data: { deletedAt: now },
     });
 
+    if (exists.tableSessionId) {
+      await this.prisma.tableSession.update({
+        where: { id: exists.tableSessionId },
+        data: { lastActivityAt: new Date() },
+      });
+    }
+
     await this.prisma.auditLog.create({
       data: {
         userId: actor?.id,
@@ -233,6 +251,66 @@ export class ReservationsService {
       durationMinutes,
       amountCents,
     };
+  }
+
+  async extendReservation(
+    reservationId: string,
+    minutes: number,
+    actor?: { id?: string; email?: string; role?: string },
+  ) {
+    if (!minutes || minutes <= 0) {
+      throw new BadRequestException('Invalid minutes');
+    }
+    const reservation = await this.prisma.reservation.findUnique({
+      where: { id: reservationId },
+    });
+    if (!reservation || reservation.deletedAt) {
+      throw new NotFoundException('Reservation not found');
+    }
+
+    const maxMinutes = Number(process.env.RESERVATION_MAX_MINUTES || 120);
+    const currentDuration =
+      (reservation.endsAt.getTime() - reservation.startsAt.getTime()) / 60000;
+    const nextDuration = currentDuration + minutes;
+    if (nextDuration > maxMinutes) {
+      throw new BadRequestException('Invalid reservation duration');
+    }
+
+    const newEnd = new Date(reservation.endsAt.getTime() + minutes * 60000);
+
+    const conflict = await this.prisma.reservation.findFirst({
+      where: {
+        stationId: reservation.stationId,
+        deletedAt: null,
+        id: { not: reservation.id },
+        startsAt: { lt: newEnd },
+        endsAt: { gt: reservation.endsAt },
+      },
+    });
+    if (conflict) {
+      throw new BadRequestException('Time slot not available');
+    }
+
+    const updated = await this.prisma.reservation.update({
+      where: { id: reservation.id },
+      data: { endsAt: newEnd },
+    });
+
+    await this.prisma.auditLog.create({
+      data: {
+        userId: actor?.id,
+        action: 'GAME_SESSION_EXTEND',
+        entityType: 'Reservation',
+        entityId: updated.id,
+        metadata: {
+          minutes,
+          actorEmail: actor?.email,
+          actorRole: actor?.role,
+        },
+      },
+    });
+
+    return updated;
   }
 
   async topGames(from?: string, to?: string, limit = 5) {

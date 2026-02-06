@@ -43,10 +43,51 @@ export class SessionsService {
       return { closed: false };
     }
 
+    const activeOrders = await this.prisma.order.count({
+      where: {
+        tableSessionId: session.id,
+        deletedAt: null,
+        status: { in: ['NEW', 'IN_PROGRESS'] },
+      },
+    });
+    if (activeOrders > 0) {
+      return { closed: false, reason: 'ACTIVE_ORDERS' };
+    }
+
     const updated = await this.prisma.tableSession.update({
       where: { id: session.id },
       data: { endedAt: new Date() },
     });
+
+    const activeReservations = await this.prisma.reservation.findMany({
+      where: {
+        tableSessionId: session.id,
+        deletedAt: null,
+      },
+    });
+
+    const stopTime = new Date();
+    for (const reservation of activeReservations) {
+      await this.prisma.reservation.update({
+        where: { id: reservation.id },
+        data: { deletedAt: stopTime },
+      });
+
+      await this.prisma.auditLog.create({
+        data: {
+          userId: actor?.id,
+          action: 'GAME_SESSION_STOP_BY_TABLE_CLOSE',
+          entityType: 'Reservation',
+          entityId: reservation.id,
+          metadata: {
+            tableCode,
+            stationId: reservation.stationId,
+            actorEmail: actor?.email,
+            actorRole: actor?.role,
+          },
+        },
+      });
+    }
 
     await this.prisma.auditLog.create({
       data: {

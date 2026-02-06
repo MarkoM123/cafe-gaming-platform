@@ -41,6 +41,9 @@ export default function LandingPage() {
             <a className="btn primary" href="/games">
               Rezerviši igru
             </a>
+            <a className="btn ghost" href="/menu">
+              Pogledaj meni
+            </a>
           </div>
           <div className="hero-note">
             QR meni je dostupan samo skeniranjem koda na stolu.
@@ -48,41 +51,30 @@ export default function LandingPage() {
         </div>
 
         <div className="hero-visual">
-          <div className="hero-card glass">
-            <div className="hero-card-title">Skeniraj → Poruči</div>
-            <div className="hero-card-body">
-              <div className="pulse-dot" />
-              <div>Porudžbina je jasna i brza</div>
+          <div className="hero-grid">
+            <div className="hero-tile neon">
+              <div className="hero-tile-title">PC arena</div>
+              <div className="hero-tile-body">144Hz • FPS ready</div>
             </div>
-            <div className="hero-card-footer">Sve bez aplikacije</div>
-          </div>
-
-          <div className="hero-card neon">
-            <div className="hero-card-title">Rezervacije po stanici</div>
-            <div className="slot-row">
-              <span className="slot-chip free">Slobodno</span>
-              <span>18:00 – 20:00</span>
+            <div className="hero-tile glow">
+              <div className="hero-tile-title">Console lounge</div>
+              <div className="hero-tile-body">PS5 • Co-op večeri</div>
             </div>
-            <div className="slot-row">
-              <span className="slot-chip busy">Zauzeto</span>
-              <span>20:00 – 22:00</span>
+            <div className="hero-tile ember">
+              <div className="hero-tile-title">Turniri</div>
+              <div className="hero-tile-body">Dnevne prijave</div>
             </div>
-            <div className="slot-row">
-              <span className="slot-chip hold">Potvrda</span>
-              <span>22:00 – 23:00</span>
+            <div className="hero-tile steel">
+              <div className="hero-tile-title">QR naručivanje</div>
+              <div className="hero-tile-body">Bez čekanja</div>
             </div>
-          </div>
-
-          <div className="hero-card signal">
-            <div className="hero-card-title">Status narudžbine</div>
-            <div className="signal-row">
-              <span className="dot on" /> Poslato
+            <div className="hero-tile mint">
+              <div className="hero-tile-title">Kafa bar</div>
+              <div className="hero-tile-body">Specijaliteti</div>
             </div>
-            <div className="signal-row">
-              <span className="dot wait" /> U pripremi
-            </div>
-            <div className="signal-row">
-              <span className="dot off" /> Spremno
+            <div className="hero-tile dusk">
+              <div className="hero-tile-title">Rezervacije</div>
+              <div className="hero-tile-body">Jasni termini</div>
             </div>
           </div>
         </div>
@@ -90,30 +82,83 @@ export default function LandingPage() {
 
       <section className="landing-section flow-section">
         <div className="section-header">
-          <h2>Kako izgleda gostu</h2>
+          <h2>Atmosfera koja drži tempo</h2>
           <p className="muted">
-            Jednostavno, brzo i bez konfuzije — sve je tu gde treba.
+            Glasna atmosfera, brze porudžbine i jasni termini.
           </p>
         </div>
-        <div className="flow-grid">
-          <article className="flow-card">
-            <div className="flow-index">01</div>
-            <h3>QR meni</h3>
-            <p>Skener na stolu vodi direktno na meni i narudžbinu.</p>
-            <div className="flow-meta">Bez registracije • bez čekanja</div>
+        <div className="feature-grid">
+          <article className="feature-card">
+            <div className="feature-icon">⚡</div>
+            <h3>Brza usluga</h3>
+            <p>Porudžbina se vidi odmah, bez čekanja.</p>
           </article>
-          <article className="flow-card">
-            <div className="flow-index">02</div>
-            <h3>Brza porudžbina</h3>
-            <p>Izaberi stavke, potvrdi i prati status uživo.</p>
-            <div className="flow-meta">Jasno • transparentno</div>
+          <article className="feature-card">
+            <div className="feature-icon">🎮</div>
+            <h3>PC & PS5 zone</h3>
+            <p>Jasno odvojene zone i setupi spremni.</p>
           </article>
-          <article className="flow-card">
-            <div className="flow-index">03</div>
-            <h3>Rezervacije igara</h3>
-            <p>Izaberi stanicu, termin i potvrdi u dva klika.</p>
-            <div className="flow-meta">Bez preklapanja • sigurno</div>
+          <article className="feature-card">
+            <div className="feature-icon">🧾</div>
+            <h3>Račun po stolu</h3>
+            <p>Sve je grupisano i pregledno.</p>
           </article>
+          <article className="feature-card">
+            <div className="feature-icon">🕹️</div>
+            <h3>Turniri</h3>
+            <p>Dnevne prijave i brza organizacija.</p>
+          </article>
+          <article className="feature-card">
+            <div className="feature-icon">☕</div>
+            <h3>Kafa bar</h3>
+            <p>Specijaliteti i brze pauze.</p>
+          </article>
+          <article className="feature-card">
+            <div className="feature-icon">🗓️</div>
+            <h3>Rezervacije</h3>
+            <p>Bez preklapanja, sve je jasno.</p>
+          </article>
+        </div>
+      </section>
+
+      <section className="landing-section menu-preview">
+        <div className="section-header">
+          <h2>Meni koji se pamti</h2>
+          <p className="muted">
+            Pregledan, čist i brz — stavke i cene su odmah tu.
+          </p>
+        </div>
+        <div className="menu-preview-grid">
+          <article className="menu-preview-card">
+            <div className="menu-preview-image img-latte" />
+            <div className="menu-preview-body">
+              <h3>Specijaliteti kafe</h3>
+              <p>Espresso, cappuccino, latte, mocha i cold brew.</p>
+              <div className="menu-preview-price">od 220 RSD</div>
+            </div>
+          </article>
+          <article className="menu-preview-card">
+            <div className="menu-preview-image img-soda" />
+            <div className="menu-preview-body">
+              <h3>Sokovi i gazirano</h3>
+              <p>Flaše, limenke, tonik i sveže kombinacije.</p>
+              <div className="menu-preview-price">od 190 RSD</div>
+            </div>
+          </article>
+          <article className="menu-preview-card">
+            <div className="menu-preview-image img-snack" />
+            <div className="menu-preview-body">
+              <h3>Zalogaji</h3>
+              <p>Toast, nachos i sendviči za duge partije.</p>
+              <div className="menu-preview-price">od 350 RSD</div>
+            </div>
+          </article>
+        </div>
+        <div className="menu-preview-cta">
+          <a className="btn primary" href="/menu">
+            Otvori ceo meni
+          </a>
+          <span className="muted">Za porudžbine sa stola koristi QR.</span>
         </div>
       </section>
 
@@ -128,20 +173,23 @@ export default function LandingPage() {
             <a className="btn primary" href="/games">
               Rezerviši termin
             </a>
+            <a className="btn ghost" href="/menu">
+              Pogledaj meni
+            </a>
           </div>
         </div>
-        <div className="proof-card">
-          <div>
-            <strong>QR iskustvo</strong>
-            <span>Meni dostupan samo na stolu</span>
+        <div className="proof-card highlight">
+          <div className="proof-item">
+            <strong>Brza usluga</strong>
+            <span>Porudžbine idu odmah, bez čekanja.</span>
           </div>
-          <div>
-            <strong>Brza porudžbina</strong>
-            <span>Od skeniranja do potvrde za par sekundi</span>
+          <div className="proof-item">
+            <strong>Gaming zona</strong>
+            <span>PC i konzole spremne u svako doba.</span>
           </div>
-          <div>
-            <strong>Rezervacije</strong>
-            <span>Termini jasni i bez preklapanja</span>
+          <div className="proof-item">
+            <strong>Komfor</strong>
+            <span>Prostor za ekipe i duge partije.</span>
           </div>
         </div>
       </section>
@@ -151,11 +199,13 @@ export default function LandingPage() {
           <h2>Atmosfera i iskustvo</h2>
           <p className="muted">Kafa, igre i prostor koji radi bez zastoja.</p>
         </div>
-        <div className="gallery">
+        <div className="gallery gallery-large">
           <div className="shot warm">Espresso bar</div>
           <div className="shot cool">Gaming pods</div>
           <div className="shot neon">Arcade corner</div>
           <div className="shot wood">Cozy lounge</div>
+          <div className="shot midnight">VR zone</div>
+          <div className="shot sunset">Community table</div>
         </div>
       </section>
 

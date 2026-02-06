@@ -12,6 +12,7 @@ type OrderItem = {
 
 type Game = { id: string; name: string };
 type Station = { id: string; name: string };
+type Table = { id: string; code: string; name?: string | null };
 type Reservation = {
   id: string;
   stationId: string;
@@ -28,9 +29,11 @@ type Order = {
   orderNumber?: number;
   status: string;
   totalCents: number;
+  paidAt?: string | null;
+  paymentMethod?: string | null;
   createdAt: string;
   items: OrderItem[];
-  tableSession: { table: { code: string } };
+  tableSession: { table: { code: string }; endedAt?: string | null };
 };
 
 const HIGHLIGHT_MS = 2 * 60 * 1000;
@@ -59,6 +62,7 @@ export default function StaffOrdersPage() {
   const [highlightedIds, setHighlightedIds] = useState<string[]>([]);
   const [stations, setStations] = useState<Station[]>([]);
   const [games, setGames] = useState<Game[]>([]);
+  const [tables, setTables] = useState<Table[]>([]);
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [reservationDate, setReservationDate] = useState(() => {
     const now = new Date();
@@ -78,6 +82,9 @@ export default function StaffOrdersPage() {
   const [totalsScope, setTotalsScope] = useState<'ACTIVE' | 'ALL'>('ACTIVE');
   const [gameDuration, setGameDuration] = useState(60);
   const [gamePlayerName, setGamePlayerName] = useState('');
+  const [gameTableCode, setGameTableCode] = useState('');
+  const [gameActionLoadingId, setGameActionLoadingId] = useState<string | null>(null);
+  const [unpaidOnly, setUnpaidOnly] = useState(false);
 
   const streamRef = useRef<EventSource | null>(null);
   const retryRef = useRef(0);
@@ -169,9 +176,12 @@ export default function StaffOrdersPage() {
 
   const loadGamesAndStations = async () => {
     try {
-      const [stationsRes, gamesRes] = await Promise.all([
+      const [stationsRes, gamesRes, tablesRes] = await Promise.all([
         fetch(`${baseUrl}/game-stations`),
         fetch(`${baseUrl}/games`),
+        fetch(`${baseUrl}/tables`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
       ]);
       if (stationsRes.ok) {
         const stationsData = await stationsRes.json();
@@ -185,6 +195,13 @@ export default function StaffOrdersPage() {
         setGames(gamesData);
         if (!reservationGameId && gamesData.length > 0) {
           setReservationGameId(gamesData[0].id);
+        }
+      }
+      if (tablesRes.ok) {
+        const tablesData = await tablesRes.json();
+        setTables(tablesData);
+        if (!gameTableCode && tablesData.length > 0) {
+          setGameTableCode(tablesData[0].code);
         }
       }
     } catch {
@@ -212,28 +229,32 @@ export default function StaffOrdersPage() {
     }
   };
 
-  const updateStatus = async (id: string, status: string) => {
+  const updateStatus = async (id: string, status: string, reason?: string) => {
     const res = await fetch(`${baseUrl}/orders/${id}/status`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify({ status }),
+      body: JSON.stringify({ status, reason }),
     });
     if (res.ok) {
       loadOrders();
     }
   };
 
-  const closeOrder = async (id: string, paidCents: number) => {
+  const closeOrder = async (
+    id: string,
+    paidCents: number,
+    paymentMethod: 'CASH' | 'CARD' | 'MIXED',
+  ) => {
     const res = await fetch(`${baseUrl}/orders/${id}/close`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify({ paidCents }),
+      body: JSON.stringify({ paidCents, paymentMethod }),
     });
     if (res.ok) {
       loadOrders();
@@ -405,6 +426,7 @@ export default function StaffOrdersPage() {
     const isActive = (status: string) => status === 'NEW' || status === 'IN_PROGRESS';
     for (const o of orders) {
       if (totalsScope === 'ACTIVE' && !isActive(o.status)) continue;
+      if (o.tableSession.endedAt) continue;
       const table = o.tableSession.table.code;
       map.set(table, (map.get(table) || 0) + o.totalCents);
     }
@@ -415,7 +437,11 @@ export default function StaffOrdersPage() {
     const activeOrders = orders.filter(
       (o) => o.status === 'NEW' || o.status === 'IN_PROGRESS',
     );
-    const activeTables = new Set(activeOrders.map((o) => o.tableSession.table.code));
+    const activeTables = new Set(
+      activeOrders
+        .filter((o) => !o.tableSession.endedAt)
+        .map((o) => o.tableSession.table.code),
+    );
     const todayKey = new Date().toISOString().slice(0, 10);
     const revenueToday = orders
       .filter((o) => o.createdAt.slice(0, 10) === todayKey)
@@ -438,6 +464,7 @@ export default function StaffOrdersPage() {
   const ordersByTable = useMemo(() => {
     const map = new Map<string, Order[]>();
     for (const o of orders) {
+      if (o.tableSession.endedAt) continue;
       const table = o.tableSession.table.code;
       const list = map.get(table) || [];
       list.push(o);
@@ -450,19 +477,30 @@ export default function StaffOrdersPage() {
     const list = ordersByTable.get(tableCode) || [];
     if (list.length === 0) return;
     const total = list.reduce((sum, o) => sum + o.totalCents, 0);
+    const method = window
+      .prompt('Način plaćanja: CASH, CARD ili MIXED', 'CASH')
+      ?.toUpperCase();
+    if (method !== 'CASH' && method !== 'CARD' && method !== 'MIXED') return;
     const ok = window.confirm(
       `Ukupno za naplatu: ${(total / 100).toFixed(2)} RSD.\nZatvori sto ${tableCode}?`,
     );
     if (!ok) return;
-    await Promise.all(list.map((o) => closeOrder(o.id, o.totalCents)));
-    await fetch(`${baseUrl}/sessions/close?tableCode=${tableCode}`, {
+    await Promise.all(list.map((o) => closeOrder(o.id, o.totalCents, method)));
+    const res = await fetch(`${baseUrl}/sessions/close?tableCode=${tableCode}`, {
       method: 'PATCH',
       headers: { Authorization: `Bearer ${token}` },
     });
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.closed === false && data.reason === 'ACTIVE_ORDERS') {
+        alert('Sto ne može da se zatvori. Aktivne porudžbine postoje.');
+      }
+    }
     loadOrders();
   };
 
   const startGame = async (stationId: string) => {
+    setGameActionLoadingId(stationId);
     const res = await fetch(`${baseUrl}/reservations/start-game`, {
       method: 'POST',
       headers: {
@@ -475,15 +513,18 @@ export default function StaffOrdersPage() {
         durationMinutes: gameDuration,
         customerName: gamePlayerName || undefined,
         customerPhone: 'N/A',
+        tableCode: gameTableCode || undefined,
       }),
     });
     if (res.ok) {
       setGamePlayerName('');
       await loadReservationsForDay();
     }
+    setGameActionLoadingId(null);
   };
 
   const stopGame = async (reservationId: string) => {
+    setGameActionLoadingId(reservationId);
     const res = await fetch(`${baseUrl}/reservations/${reservationId}/stop-game`, {
       method: 'POST',
       headers: {
@@ -497,6 +538,25 @@ export default function StaffOrdersPage() {
       );
       await loadReservationsForDay();
     }
+    setGameActionLoadingId(null);
+  };
+
+  const extendGame = async (reservationId: string, minutes: number) => {
+    setGameActionLoadingId(reservationId);
+    const res = await fetch(`${baseUrl}/reservations/${reservationId}/extend`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ minutes }),
+    });
+    if (!res.ok) {
+      alert('Ne može da se produži termin.');
+    } else {
+      await loadReservationsForDay();
+    }
+    setGameActionLoadingId(null);
   };
 
   const filteredOrders = useMemo(() => {
@@ -506,6 +566,7 @@ export default function StaffOrdersPage() {
     return orders.filter((order) => {
       const matchStatus =
         statusFilter === 'ALL' ? true : order.status === statusFilter;
+      const matchPayment = unpaidOnly ? !order.paidAt : true;
       const matchTable = table
         ? order.tableSession.table.code.toLowerCase().includes(table)
         : true;
@@ -514,9 +575,9 @@ export default function StaffOrdersPage() {
             item.menuItem.name.toLowerCase().includes(keyword),
           )
         : true;
-      return matchStatus && matchTable && matchKeyword;
+      return matchStatus && matchPayment && matchTable && matchKeyword;
     });
-  }, [orders, tableFilter, keywordFilter, statusFilter]);
+  }, [orders, tableFilter, keywordFilter, statusFilter, unpaidOnly]);
 
   const logout = () => {
     localStorage.removeItem('staffToken');
@@ -619,6 +680,14 @@ export default function StaffOrdersPage() {
             />
             Flash
           </label>
+          <label>
+            <input
+              type="checkbox"
+              checked={unpaidOnly}
+              onChange={(e) => setUnpaidOnly(e.target.checked)}
+            />
+            Samo neplaćene
+          </label>
         </div>
         <div className="control-actions">
           <button className="btn ghost" onClick={loadOrders}>Refresh</button>
@@ -651,6 +720,11 @@ export default function StaffOrdersPage() {
                   <span>{new Date(o.createdAt).toLocaleTimeString()}</span>
                   <span>{(o.totalCents / 100).toFixed(2)} RSD</span>
                 </div>
+                {o.paidAt && (
+                  <div className="order-paid">
+                    Plaćeno • {o.paymentMethod || 'CASH'}
+                  </div>
+                )}
                 <ul className="order-items">
                   {o.items.map((i) => (
                     <li key={i.id}>
@@ -660,9 +734,29 @@ export default function StaffOrdersPage() {
                   ))}
                 </ul>
                 <div className="order-actions">
-                  <button onClick={() => updateStatus(o.id, 'IN_PROGRESS')}>U pripremi</button>
-                  <button onClick={() => updateStatus(o.id, 'DONE')}>Spremno</button>
-                  <button onClick={() => updateStatus(o.id, 'CANCELED')}>Otkazi</button>
+                  <button
+                    onClick={() => updateStatus(o.id, 'IN_PROGRESS')}
+                    disabled={o.status !== 'NEW'}
+                  >
+                    U pripremi
+                  </button>
+                  <button
+                    onClick={() => updateStatus(o.id, 'DONE')}
+                    disabled={o.status !== 'IN_PROGRESS'}
+                  >
+                    Spremno
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (o.status === 'DONE' || o.status === 'CANCELED') return;
+                      const reason = window.prompt('Razlog otkaza? (opciono)') || undefined;
+                      if (!window.confirm('Potvrdi otkaz porudžbine?')) return;
+                      updateStatus(o.id, 'CANCELED', reason);
+                    }}
+                    disabled={o.status === 'DONE' || o.status === 'CANCELED'}
+                  >
+                    Otkaži
+                  </button>
                 </div>
               </article>
             );
@@ -747,6 +841,17 @@ export default function StaffOrdersPage() {
             <h3>Igre / Računari</h3>
             <div className="controls">
               <select
+                value={gameTableCode}
+                onChange={(e) => setGameTableCode(e.target.value)}
+              >
+                <option value="">Bez stola</option>
+                {tables.map((t) => (
+                  <option key={t.id} value={t.code}>
+                    {t.name ? t.name : `Sto ${t.code}`}
+                  </option>
+                ))}
+              </select>
+              <select
                 value={reservationGameId}
                 onChange={(e) => setReservationGameId(e.target.value)}
               >
@@ -788,13 +893,37 @@ export default function StaffOrdersPage() {
                       {!busy && <div className="muted">SLOBODAN</div>}
                     </div>
                     {!busy ? (
-                      <button className="btn tiny" onClick={() => startGame(s.id)}>
-                        Start
+                      <button
+                        className="btn tiny"
+                        onClick={() => startGame(s.id)}
+                        disabled={gameActionLoadingId === s.id}
+                      >
+                        {gameActionLoadingId === s.id ? '...' : 'Start'}
                       </button>
                     ) : (
-                      <button className="btn tiny primary" onClick={() => stopGame(active!.id)}>
-                        Stop
-                      </button>
+                      <div className="controls">
+                        <button
+                          className="btn tiny ghost"
+                          onClick={() => extendGame(active!.id, 30)}
+                          disabled={gameActionLoadingId === active!.id}
+                        >
+                          +30m
+                        </button>
+                        <button
+                          className="btn tiny ghost"
+                          onClick={() => extendGame(active!.id, 60)}
+                          disabled={gameActionLoadingId === active!.id}
+                        >
+                          +60m
+                        </button>
+                        <button
+                          className="btn tiny primary"
+                          onClick={() => stopGame(active!.id)}
+                          disabled={gameActionLoadingId === active!.id}
+                        >
+                          {gameActionLoadingId === active!.id ? '...' : 'Stop'}
+                        </button>
+                      </div>
                     )}
                   </li>
                 );

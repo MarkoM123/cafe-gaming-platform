@@ -144,6 +144,7 @@ export class OrdersService {
   async updateStatus(
     orderId: string,
     status: OrderStatus,
+    reason?: string,
     actor?: { id?: string; email?: string; role?: string },
   ) {
     const exists = await this.prisma.order.findUnique({
@@ -171,6 +172,7 @@ export class OrdersService {
         metadata: {
           oldStatus: exists.status,
           newStatus: updated.status,
+          reason,
           actorEmail: actor?.email,
           actorRole: actor?.role,
         },
@@ -193,6 +195,7 @@ export class OrdersService {
   async closeOrder(
     orderId: string,
     paidCents: number,
+    paymentMethod: 'CASH' | 'CARD' | 'MIXED',
     actor?: { id?: string; email?: string; role?: string },
   ) {
     const exists = await this.prisma.order.findUnique({
@@ -204,7 +207,12 @@ export class OrdersService {
 
     const updated = await this.prisma.order.update({
       where: { id: orderId },
-      data: { status: OrderStatus.DONE },
+      data: {
+        status: OrderStatus.DONE,
+        paidAt: new Date(),
+        paymentMethod,
+        paidByUserId: actor?.id,
+      },
       include: {
         items: { include: { menuItem: true } },
         tableSession: { include: { table: true } },
@@ -219,6 +227,7 @@ export class OrdersService {
         entityId: updated.id,
         metadata: {
           paidCents,
+          paymentMethod,
           actorEmail: actor?.email,
           actorRole: actor?.role,
         },

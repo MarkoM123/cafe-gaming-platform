@@ -18,6 +18,7 @@ model User {
   updatedAt DateTime @updatedAt
 
   auditLogs AuditLog[]
+  paidOrders Order[]
 }
 
 enum UserRole {
@@ -46,6 +47,7 @@ model TableSession {
   lastActivityAt DateTime @default(now())
 
   orders    Order[]
+  reservations Reservation[]
 }
 
 model MenuCategory {
@@ -87,6 +89,8 @@ model Reservation {
   station     GameStation  @relation(fields: [stationId], references: [id])
   gameId      String?
   game        Game?        @relation(fields: [gameId], references: [id])
+  tableSessionId String?
+  tableSession   TableSession? @relation(fields: [tableSessionId], references: [id])
   customerName String
   customerPhone String
   startsAt    DateTime
@@ -96,6 +100,7 @@ model Reservation {
 
   @@index([stationId, startsAt, endsAt])
   @@index([deletedAt])
+  @@index([tableSessionId])
 }
 
 model Order {
@@ -107,6 +112,10 @@ model Order {
   idempotencyKey String?      @unique
   orderNumber    Int
   orderDateKey   String
+  paidAt         DateTime?
+  paymentMethod  PaymentMethod?
+  paidByUserId   String?
+  paidByUser     User?        @relation(fields: [paidByUserId], references: [id])
 
   items          OrderItem[]
   createdAt      DateTime @default(now())
@@ -138,6 +147,12 @@ enum OrderStatus {
   IN_PROGRESS
   DONE
   CANCELED
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+  MIXED
 }
 
 model OperatingHour {
