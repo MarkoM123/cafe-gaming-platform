@@ -9,7 +9,16 @@ async function bootstrap() {
   const port = process.env.PORT || 3000;
 
   app.use((req: Request, res: Response, next: NextFunction) => {
-    res.header('Access-Control-Allow-Origin', 'https://cafe-gaming-platform-mockup.vercel.app');
+    const origin = req.headers.origin;
+
+    const allowedOrigins = [
+      'http://localhost:3000',
+      'http://localhost:5173',
+    ];
+
+    if (origin && (origin.endsWith('.vercel.app') || allowedOrigins.includes(origin))) {
+      res.header('Access-Control-Allow-Origin', origin);
+    }
     res.header('Access-Control-Allow-Credentials', 'true');
     res.header(
       'Access-Control-Allow-Headers',
@@ -26,7 +35,6 @@ async function bootstrap() {
 
   app.enableCors({
     origin: [
-      'https://cafe-gaming-platform-mockup.vercel.app',
       'http://localhost:3000',
       'http://localhost:5173',
     ],
