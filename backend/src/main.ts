@@ -5,6 +5,23 @@ import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  const port = process.env.PORT || 3000;
+
+  app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', 'https://cafe-gaming-platform-mockup.vercel.app');
+    res.header('Access-Control-Allow-Credentials', 'true');
+    res.header(
+      'Access-Control-Allow-Headers',
+      'Origin, X-Requested-With, Content-Type, Accept, Authorization',
+    );
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+
+    if (req.method === 'OPTIONS') {
+      return res.sendStatus(204);
+    }
+
+    next();
+  });
 
   app.enableCors({
     origin: [
@@ -25,7 +42,10 @@ async function bootstrap() {
     }),
   );
 
-  await app.listen(process.env.PORT || 3000, '0.0.0.0');
-  console.log(`🚀 Backend running on port ${process.env.PORT || 3000}`);
+  app.setGlobalPrefix('api');
+
+  await app.listen(port, '0.0.0.0');
+  console.log(`🚀 Backend running on port ${port}`);
 }
+
 bootstrap();
