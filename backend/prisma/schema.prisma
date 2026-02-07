@@ -16,6 +16,7 @@ model User {
   updatedAt    DateTime   @updatedAt
   passwordHash String
   auditLogs    AuditLog[]
+  paidOrders   Order[]    @relation("UserPaidOrders")
 }
 
 model Table {
@@ -29,13 +30,14 @@ model Table {
 }
 
 model TableSession {
-  id             String    @id @default(uuid())
+  id             String        @id @default(uuid())
   tableId        String
-  startedAt      DateTime  @default(now())
+  startedAt      DateTime      @default(now())
   endedAt        DateTime?
-  lastActivityAt DateTime  @default(now())
+  lastActivityAt DateTime      @default(now())
   orders         Order[]
-  table          Table     @relation(fields: [tableId], references: [id])
+  reservations   Reservation[]
+  table          Table         @relation(fields: [tableId], references: [id])
 }
 
 model MenuCategory {
@@ -71,34 +73,41 @@ model Game {
 }
 
 model Reservation {
-  id            String      @id @default(uuid())
-  stationId     String
-  gameId        String?
-  customerName  String
-  customerPhone String
-  startsAt      DateTime
-  endsAt        DateTime
-  createdAt     DateTime    @default(now())
-  deletedAt     DateTime?
-  game          Game?       @relation(fields: [gameId], references: [id])
-  station       GameStation @relation(fields: [stationId], references: [id])
+  id             String        @id @default(uuid())
+  stationId      String
+  gameId         String?
+  tableSessionId String?
+  customerName   String
+  customerPhone  String
+  startsAt       DateTime
+  endsAt         DateTime
+  createdAt      DateTime      @default(now())
+  deletedAt      DateTime?
+  game           Game?         @relation(fields: [gameId], references: [id])
+  station        GameStation   @relation(fields: [stationId], references: [id])
+  tableSession   TableSession? @relation(fields: [tableSessionId], references: [id])
 
   @@index([stationId, startsAt, endsAt])
   @@index([deletedAt])
+  @@index([tableSessionId])
 }
 
 model Order {
-  id             String       @id @default(uuid())
+  id             String         @id @default(uuid())
   tableSessionId String
-  status         OrderStatus  @default(NEW)
+  status         OrderStatus    @default(NEW)
   totalCents     Int
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-  idempotencyKey String?      @unique
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  idempotencyKey String?        @unique
+  paidAt         DateTime?
+  paymentMethod  PaymentMethod?
+  paidByUserId   String?
   deletedAt      DateTime?
   orderDateKey   String
   orderNumber    Int
-  tableSession   TableSession @relation(fields: [tableSessionId], references: [id])
+  tableSession   TableSession   @relation(fields: [tableSessionId], references: [id])
+  paidByUser     User?          @relation("UserPaidOrders", fields: [paidByUserId], references: [id])
   items          OrderItem[]
 
   @@unique([orderDateKey, orderNumber])
@@ -161,4 +170,10 @@ enum OrderStatus {
   IN_PROGRESS
   DONE
   CANCELED
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+  MIXED
 }
