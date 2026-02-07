@@ -1,30 +1,21 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-generator client {
-  provider = "prisma-client-js"
-}
-
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
+  id           String     @id @default(uuid())
+  email        String     @unique
+  name         String?
+  role         UserRole   @default(GAMER)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
   passwordHash String
-  name      String?
-  role      UserRole @default(GAMER)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  auditLogs AuditLog[]
-  paidOrders Order[]
-}
-
-enum UserRole {
-  ADMIN
-  STAFF
-  GAMER
+  auditLogs    AuditLog[]
 }
 
 model Table {
@@ -32,22 +23,19 @@ model Table {
   code      String         @unique
   name      String?
   isActive  Boolean        @default(true)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
   sessions  TableSession[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 }
 
 model TableSession {
-  id        String   @id @default(uuid())
-  tableId   String
-  table     Table    @relation(fields: [tableId], references: [id])
-  startedAt DateTime @default(now())
-  endedAt   DateTime?
-  lastActivityAt DateTime @default(now())
-
-  orders    Order[]
-  reservations Reservation[]
+  id             String    @id @default(uuid())
+  tableId        String
+  startedAt      DateTime  @default(now())
+  endedAt        DateTime?
+  lastActivityAt DateTime  @default(now())
+  orders         Order[]
+  table          Table     @relation(fields: [tableId], references: [id])
 }
 
 model MenuCategory {
@@ -58,72 +46,63 @@ model MenuCategory {
 }
 
 model MenuItem {
-  id           String       @id @default(uuid())
-  categoryId   String
-  category     MenuCategory @relation(fields: [categoryId], references: [id])
-  name         String
-  description  String?
-  priceCents   Int
-  isActive     Boolean      @default(true)
-
-  orderItems   OrderItem[]
+  id          String       @id @default(uuid())
+  categoryId  String
+  name        String
+  description String?
+  priceCents  Int
+  isActive    Boolean      @default(true)
+  category    MenuCategory @relation(fields: [categoryId], references: [id])
+  orderItems  OrderItem[]
 }
 
 model GameStation {
-  id        String        @id @default(uuid())
-  name      String
-  isActive  Boolean       @default(true)
+  id           String        @id @default(uuid())
+  name         String
+  isActive     Boolean       @default(true)
   reservations Reservation[]
 }
 
 model Game {
-  id        String        @id @default(uuid())
-  name      String
-  isActive  Boolean       @default(true)
+  id           String        @id @default(uuid())
+  name         String
+  isActive     Boolean       @default(true)
   reservations Reservation[]
 }
 
 model Reservation {
-  id          String       @id @default(uuid())
-  stationId   String
-  station     GameStation  @relation(fields: [stationId], references: [id])
-  gameId      String?
-  game        Game?        @relation(fields: [gameId], references: [id])
-  tableSessionId String?
-  tableSession   TableSession? @relation(fields: [tableSessionId], references: [id])
-  customerName String
+  id            String      @id @default(uuid())
+  stationId     String
+  gameId        String?
+  customerName  String
   customerPhone String
-  startsAt    DateTime
-  endsAt      DateTime
-  createdAt   DateTime @default(now())
-  deletedAt   DateTime?
+  startsAt      DateTime
+  endsAt        DateTime
+  createdAt     DateTime    @default(now())
+  deletedAt     DateTime?
+  game          Game?       @relation(fields: [gameId], references: [id])
+  station       GameStation @relation(fields: [stationId], references: [id])
 
   @@index([stationId, startsAt, endsAt])
   @@index([deletedAt])
-  @@index([tableSessionId])
 }
 
 model Order {
   id             String       @id @default(uuid())
   tableSessionId String
-  tableSession   TableSession @relation(fields: [tableSessionId], references: [id])
   status         OrderStatus  @default(NEW)
   totalCents     Int
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
   idempotencyKey String?      @unique
-  orderNumber    Int
-  orderDateKey   String
-  paidAt         DateTime?
-  paymentMethod  PaymentMethod?
-  paidByUserId   String?
-  paidByUser     User?        @relation(fields: [paidByUserId], references: [id])
-
-  items          OrderItem[]
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
   deletedAt      DateTime?
+  orderDateKey   String
+  orderNumber    Int
+  tableSession   TableSession @relation(fields: [tableSessionId], references: [id])
+  items          OrderItem[]
 
-  @@index([deletedAt, createdAt])
   @@unique([orderDateKey, orderNumber])
+  @@index([deletedAt, createdAt])
 }
 
 model OrderDailyCounter {
@@ -132,27 +111,14 @@ model OrderDailyCounter {
 }
 
 model OrderItem {
-  id           String   @id @default(uuid())
-  orderId      String
-  order        Order    @relation(fields: [orderId], references: [id])
-  menuItemId   String
-  menuItem     MenuItem @relation(fields: [menuItemId], references: [id])
-  quantity     Int
+  id             String   @id @default(uuid())
+  orderId        String
+  menuItemId     String
+  quantity       Int
   unitPriceCents Int
-  totalCents   Int
-}
-
-enum OrderStatus {
-  NEW
-  IN_PROGRESS
-  DONE
-  CANCELED
-}
-
-enum PaymentMethod {
-  CASH
-  CARD
-  MIXED
+  totalCents     Int
+  menuItem       MenuItem @relation(fields: [menuItemId], references: [id])
+  order          Order    @relation(fields: [orderId], references: [id])
 }
 
 model OperatingHour {
@@ -167,13 +133,32 @@ model OperatingHour {
 model AuditLog {
   id         String   @id @default(uuid())
   userId     String?
-  user       User?    @relation(fields: [userId], references: [id])
   action     String
   entityType String
   entityId   String
   metadata   Json?
   createdAt  DateTime @default(now())
+  user       User?    @relation(fields: [userId], references: [id])
 
   @@index([entityType, entityId])
   @@index([createdAt])
+}
+
+model playing_with_neon {
+  id    Int    @id @default(autoincrement())
+  name  String
+  value Float? @db.Real
+}
+
+enum UserRole {
+  ADMIN
+  STAFF
+  GAMER
+}
+
+enum OrderStatus {
+  NEW
+  IN_PROGRESS
+  DONE
+  CANCELED
 }
