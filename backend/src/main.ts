@@ -5,8 +5,17 @@ import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  const port = process.env.PORT || 3001;
+
+  const corsOrigins = [
+    'http://localhost:3000',
+    process.env.CLIENT_URL,
+    process.env.FRONTEND_URL,
+    process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined,
+  ].filter(Boolean);
+
   app.enableCors({
-    origin: ['http://localhost:3000'],
+    origin: corsOrigins,
     credentials: true,
   });
 
@@ -18,6 +27,7 @@ async function bootstrap() {
     }),
   );
 
-  await app.listen(3001);
+  await app.listen(port, '0.0.0.0');
+  console.log(`🚀 Backend running on port ${port}`);
 }
 bootstrap();
