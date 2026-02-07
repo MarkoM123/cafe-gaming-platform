@@ -8,7 +8,9 @@ async function bootstrap() {
   const port = process.env.PORT || 3001;
 
   const corsOrigins = [
+    'https://cafe-gaming-platform-mockup.vercel.app',
     'http://localhost:3000',
+    'http://localhost:5173',
     process.env.CLIENT_URL,
     process.env.FRONTEND_URL,
     process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined,
@@ -17,6 +19,8 @@ async function bootstrap() {
   app.enableCors({
     origin: corsOrigins,
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
   });
 
   app.useGlobalPipes(
