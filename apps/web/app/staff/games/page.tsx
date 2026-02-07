@@ -11,6 +11,7 @@ type UserInfo = { email: string; role: string };
 export default function StaffGamesPage() {
   const router = useRouter();
   const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+  const apiBase = `${baseUrl}/api`;
 
   const [token, setToken] = useState('');
   const [user, setUser] = useState<UserInfo | null>(null);
@@ -32,7 +33,7 @@ export default function StaffGamesPage() {
   }, [router]);
 
   const loadUser = async () => {
-    const res = await fetch(`${baseUrl}/auth/me`, {
+    const res = await fetch(`${apiBase}/auth/me`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     if (!res.ok) return;
@@ -43,10 +44,10 @@ export default function StaffGamesPage() {
   const loadData = async () => {
     setError(null);
     const [gamesRes, stationsRes] = await Promise.all([
-      fetch(`${baseUrl}/games/all`, {
+      fetch(`${apiBase}/games/all`, {
         headers: { Authorization: `Bearer ${token}` },
       }),
-      fetch(`${baseUrl}/game-stations/all`, {
+      fetch(`${apiBase}/game-stations/all`, {
         headers: { Authorization: `Bearer ${token}` },
       }),
     ]);
@@ -73,7 +74,7 @@ export default function StaffGamesPage() {
 
   const createGame = async () => {
     if (!isAdmin || !newGame.trim()) return;
-    const res = await fetch(`${baseUrl}/games`, {
+    const res = await fetch(`${apiBase}/games`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -89,7 +90,7 @@ export default function StaffGamesPage() {
 
   const createStation = async () => {
     if (!isAdmin || !newStation.trim()) return;
-    const res = await fetch(`${baseUrl}/game-stations`, {
+    const res = await fetch(`${apiBase}/game-stations`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -105,7 +106,7 @@ export default function StaffGamesPage() {
 
   const updateGame = async (game: Game) => {
     if (!isAdmin) return;
-    await fetch(`${baseUrl}/games/${game.id}`, {
+    await fetch(`${apiBase}/games/${game.id}`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
@@ -118,7 +119,7 @@ export default function StaffGamesPage() {
 
   const updateStation = async (station: Station) => {
     if (!isAdmin) return;
-    await fetch(`${baseUrl}/game-stations/${station.id}`, {
+    await fetch(`${apiBase}/game-stations/${station.id}`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',

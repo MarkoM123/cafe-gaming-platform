@@ -26,6 +26,7 @@ type UserInfo = {
 export default function StaffMenuPage() {
   const router = useRouter();
   const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+  const apiBase = `${baseUrl}/api`;
 
   const [token, setToken] = useState('');
   const [menu, setMenu] = useState<MenuCategory[]>([]);
@@ -51,7 +52,7 @@ export default function StaffMenuPage() {
   }, [router]);
 
   const loadUser = async () => {
-    const res = await fetch(`${baseUrl}/auth/me`, {
+    const res = await fetch(`${apiBase}/auth/me`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     if (!res.ok) return;
@@ -61,7 +62,7 @@ export default function StaffMenuPage() {
 
   const loadMenu = async () => {
     setError(null);
-    const res = await fetch(`${baseUrl}/menu/all`, {
+    const res = await fetch(`${apiBase}/menu/all`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     if (!res.ok) {
@@ -100,7 +101,7 @@ export default function StaffMenuPage() {
 
   const createCategory = async () => {
     if (!isAdmin) return;
-    const res = await fetch(`${baseUrl}/menu/categories`, {
+    const res = await fetch(`${apiBase}/menu/categories`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -117,7 +118,7 @@ export default function StaffMenuPage() {
 
   const createItem = async () => {
     if (!isAdmin) return;
-    const res = await fetch(`${baseUrl}/menu/items`, {
+    const res = await fetch(`${apiBase}/menu/items`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -143,7 +144,7 @@ export default function StaffMenuPage() {
     const data = editing[itemId];
     if (!data) return;
 
-    const res = await fetch(`${baseUrl}/menu/items/${itemId}`, {
+    const res = await fetch(`${apiBase}/menu/items/${itemId}`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',

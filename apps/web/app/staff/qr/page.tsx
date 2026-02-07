@@ -18,6 +18,7 @@ type QrRow = {
 export default function StaffQrPage() {
   const router = useRouter();
   const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+  const apiBase = `${baseUrl}/api`;
 
   const [token, setToken] = useState('');
   const [user, setUser] = useState<UserInfo | null>(null);
@@ -37,7 +38,7 @@ export default function StaffQrPage() {
   }, [router]);
 
   const loadUser = async () => {
-    const res = await fetch(`${baseUrl}/auth/me`, {
+    const res = await fetch(`${apiBase}/auth/me`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     if (!res.ok) return;
@@ -47,7 +48,7 @@ export default function StaffQrPage() {
 
   const loadTables = async () => {
     setError(null);
-    const res = await fetch(`${baseUrl}/tables`, {
+    const res = await fetch(`${apiBase}/tables`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     if (!res.ok) {

@@ -29,6 +29,7 @@ type Order = {
 export default function StaffTablesPage() {
   const router = useRouter();
   const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+  const apiBase = `${baseUrl}/api`;
 
   const [token, setToken] = useState('');
   const [tables, setTables] = useState<Table[]>([]);
@@ -52,10 +53,10 @@ export default function StaffTablesPage() {
     setLoading(true);
     try {
       const [tablesRes, ordersRes] = await Promise.all([
-        fetch(`${baseUrl}/tables`, {
+        fetch(`${apiBase}/tables`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
-        fetch(`${baseUrl}/orders`, {
+        fetch(`${apiBase}/orders`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
       ]);
@@ -127,7 +128,7 @@ export default function StaffTablesPage() {
     if (!ok) return;
     await Promise.all(
       list.map((o) =>
-        fetch(`${baseUrl}/orders/${o.id}/close`, {
+        fetch(`${apiBase}/orders/${o.id}/close`, {
           method: 'PATCH',
           headers: {
             'Content-Type': 'application/json',
@@ -137,7 +138,7 @@ export default function StaffTablesPage() {
         }),
       ),
     );
-    const res = await fetch(`${baseUrl}/sessions/close?tableCode=${tableCode}`, {
+    const res = await fetch(`${apiBase}/sessions/close?tableCode=${tableCode}`, {
       method: 'PATCH',
       headers: { Authorization: `Bearer ${token}` },
     });

@@ -44,6 +44,7 @@ const SLOT_MINUTES = 30;
 export default function StaffOrdersPage() {
   const router = useRouter();
   const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+  const apiBase = `${baseUrl}/api`;
 
   const [orders, setOrders] = useState<Order[]>([]);
   const [statusFilter, setStatusFilter] = useState('NEW');
@@ -138,7 +139,7 @@ export default function StaffOrdersPage() {
     setError(null);
     const params = new URLSearchParams();
 
-    const res = await fetch(`${baseUrl}/orders?${params.toString()}`, {
+    const res = await fetch(`${apiBase}/orders?${params.toString()}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     if (!res.ok) {
@@ -177,9 +178,9 @@ export default function StaffOrdersPage() {
   const loadGamesAndStations = async () => {
     try {
       const [stationsRes, gamesRes, tablesRes] = await Promise.all([
-        fetch(`${baseUrl}/game-stations`),
-        fetch(`${baseUrl}/games`),
-        fetch(`${baseUrl}/tables`, {
+        fetch(`${apiBase}/game-stations`),
+        fetch(`${apiBase}/games`),
+        fetch(`${apiBase}/tables`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
       ]);
@@ -218,7 +219,7 @@ export default function StaffOrdersPage() {
       const results = await Promise.all(
         stations.map((st) =>
           fetch(
-            `${baseUrl}/reservations?stationId=${st.id}&from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
+            `${apiBase}/reservations?stationId=${st.id}&from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
           ).then((res) => (res.ok ? res.json() : [])),
         ),
       );
@@ -230,7 +231,7 @@ export default function StaffOrdersPage() {
   };
 
   const updateStatus = async (id: string, status: string, reason?: string) => {
-    const res = await fetch(`${baseUrl}/orders/${id}/status`, {
+    const res = await fetch(`${apiBase}/orders/${id}/status`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
@@ -248,7 +249,7 @@ export default function StaffOrdersPage() {
     paidCents: number,
     paymentMethod: 'CASH' | 'CARD' | 'MIXED',
   ) => {
-    const res = await fetch(`${baseUrl}/orders/${id}/close`, {
+    const res = await fetch(`${apiBase}/orders/${id}/close`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
@@ -301,7 +302,7 @@ export default function StaffOrdersPage() {
         streamRef.current.close();
       }
 
-      const es = new EventSource(`${baseUrl}/orders/stream?token=${token}`);
+      const es = new EventSource(`${apiBase}/orders/stream?token=${token}`);
       streamRef.current = es;
       setConnectionStatus('reconnecting');
 
@@ -394,7 +395,7 @@ export default function StaffOrdersPage() {
 
     setReservationSubmitting(true);
     try {
-      const res = await fetch(`${baseUrl}/reservations`, {
+      const res = await fetch(`${apiBase}/reservations`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -486,7 +487,7 @@ export default function StaffOrdersPage() {
     );
     if (!ok) return;
     await Promise.all(list.map((o) => closeOrder(o.id, o.totalCents, method)));
-    const res = await fetch(`${baseUrl}/sessions/close?tableCode=${tableCode}`, {
+    const res = await fetch(`${apiBase}/sessions/close?tableCode=${tableCode}`, {
       method: 'PATCH',
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -501,7 +502,7 @@ export default function StaffOrdersPage() {
 
   const startGame = async (stationId: string) => {
     setGameActionLoadingId(stationId);
-    const res = await fetch(`${baseUrl}/reservations/start-game`, {
+    const res = await fetch(`${apiBase}/reservations/start-game`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -525,7 +526,7 @@ export default function StaffOrdersPage() {
 
   const stopGame = async (reservationId: string) => {
     setGameActionLoadingId(reservationId);
-    const res = await fetch(`${baseUrl}/reservations/${reservationId}/stop-game`, {
+    const res = await fetch(`${apiBase}/reservations/${reservationId}/stop-game`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`,
@@ -543,7 +544,7 @@ export default function StaffOrdersPage() {
 
   const extendGame = async (reservationId: string, minutes: number) => {
     setGameActionLoadingId(reservationId);
-    const res = await fetch(`${baseUrl}/reservations/${reservationId}/extend`, {
+    const res = await fetch(`${apiBase}/reservations/${reservationId}/extend`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',

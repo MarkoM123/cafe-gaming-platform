@@ -18,6 +18,7 @@ type UserInfo = { email: string; role: string };
 export default function StaffAuditPage() {
   const router = useRouter();
   const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+  const apiBase = `${baseUrl}/api`;
 
   const [token, setToken] = useState('');
   const [user, setUser] = useState<UserInfo | null>(null);
@@ -40,7 +41,7 @@ export default function StaffAuditPage() {
   }, [router]);
 
   const loadUser = async () => {
-    const res = await fetch(`${baseUrl}/auth/me`, {
+    const res = await fetch(`${apiBase}/auth/me`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     if (!res.ok) return;
@@ -57,7 +58,7 @@ export default function StaffAuditPage() {
     if (entityType) params.set('entityType', entityType);
     if (action) params.set('action', action);
 
-    const res = await fetch(`${baseUrl}/audit?${params.toString()}`, {
+    const res = await fetch(`${apiBase}/audit?${params.toString()}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     if (!res.ok) {

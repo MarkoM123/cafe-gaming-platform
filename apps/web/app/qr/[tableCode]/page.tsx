@@ -19,6 +19,7 @@ type MenuCategory = {
 export default function QrPage() {
   const baseUrl =
     process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+  const apiBase = `${baseUrl}/api`;
   const params = useParams<{ tableCode: string }>();
   const tableCode = params?.tableCode;
 
@@ -41,8 +42,8 @@ export default function QrPage() {
       let attempt = 0;
       while (attempt < maxRetries) {
         try {
-          await fetch(`${baseUrl}/qr/${tableCode}`);
-          const res = await fetch(`${baseUrl}/menu?tableCode=${tableCode}`);
+          await fetch(`${apiBase}/qr/${tableCode}`);
+          const res = await fetch(`${apiBase}/menu?tableCode=${tableCode}`);
           if (!res.ok) {
             throw new Error('menu');
           }
@@ -119,7 +120,7 @@ export default function QrPage() {
     }
     try {
       setIsSubmitting(true);
-      const res = await fetch(`${baseUrl}/orders`, {
+      const res = await fetch(`${apiBase}/orders`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ tableCode, items }),
@@ -146,7 +147,7 @@ export default function QrPage() {
   useEffect(() => {
     if (!orderId || !tableCode) return;
     const es = new EventSource(
-      `${baseUrl}/orders/${orderId}/stream?tableCode=${tableCode}`,
+      `${apiBase}/orders/${orderId}/stream?tableCode=${tableCode}`,
     );
 
     const onStatus = (event: MessageEvent) => {

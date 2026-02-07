@@ -18,6 +18,7 @@ const dayLabels = ['Nedelja', 'Ponedeljak', 'Utorak', 'Sreda', 'Četvrtak', 'Pet
 export default function StaffHoursPage() {
   const router = useRouter();
   const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+  const apiBase = `${baseUrl}/api`;
 
   const [token, setToken] = useState('');
   const [user, setUser] = useState<UserInfo | null>(null);
@@ -37,7 +38,7 @@ export default function StaffHoursPage() {
   }, [router]);
 
   const loadUser = async () => {
-    const res = await fetch(`${baseUrl}/auth/me`, {
+    const res = await fetch(`${apiBase}/auth/me`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     if (!res.ok) return;
@@ -47,7 +48,7 @@ export default function StaffHoursPage() {
 
   const loadHours = async () => {
     setError(null);
-    const res = await fetch(`${baseUrl}/settings/hours`);
+    const res = await fetch(`${apiBase}/settings/hours`);
     if (!res.ok) {
       setError('Ne mogu da učitam radno vreme.');
       return;
@@ -66,7 +67,7 @@ export default function StaffHoursPage() {
   const save = async () => {
     if (!isAdmin) return;
     setInfo(null);
-    const res = await fetch(`${baseUrl}/settings/hours`, {
+    const res = await fetch(`${apiBase}/settings/hours`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',

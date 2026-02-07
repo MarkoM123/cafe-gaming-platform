@@ -19,6 +19,7 @@ type MenuCategory = {
 export default function PublicMenuPage() {
   const router = useRouter();
   const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+  const apiBase = `${baseUrl}/api`;
   const [menu, setMenu] = useState<MenuCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -27,7 +28,7 @@ export default function PublicMenuPage() {
     const load = async () => {
       try {
         setLoading(true);
-        const res = await fetch(`${baseUrl}/menu/public`);
+        const res = await fetch(`${apiBase}/menu/public`);
         if (!res.ok) throw new Error('menu');
         setMenu(await res.json());
       } catch {

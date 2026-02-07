@@ -51,6 +51,7 @@ const toLocalDateKey = (value: string | Date) => {
 export default function ReservePage() {
   const router = useRouter();
   const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+  const apiBase = `${baseUrl}/api`;
 
   const [games, setGames] = useState<Game[]>([]);
   const [stations, setStations] = useState<Station[]>([]);
@@ -69,8 +70,8 @@ export default function ReservePage() {
 
   useEffect(() => {
     const load = async () => {
-      const g = await fetch(`${baseUrl}/games`).then((r) => r.json());
-      const s = await fetch(`${baseUrl}/game-stations`).then((r) => r.json());
+      const g = await fetch(`${apiBase}/games`).then((r) => r.json());
+      const s = await fetch(`${apiBase}/game-stations`).then((r) => r.json());
       setGames(g);
       setStations(s);
       if (g.length > 0) setGameId(g[0].id);
@@ -90,7 +91,7 @@ export default function ReservePage() {
     const from = `${date}T00:00:00`;
     const to = `${date}T23:59:59`;
     const res = await fetch(
-      `${baseUrl}/reservations?stationId=${stationId}&from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
+      `${apiBase}/reservations?stationId=${stationId}&from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
     );
     if (!res.ok) {
       setError('Ne mogu da učitam dostupnost. Osveži stranicu.');
@@ -192,7 +193,7 @@ export default function ReservePage() {
     const endsAt = `${date}T${selectedEndTime}`;
 
     setIsSubmitting(true);
-    const res = await fetch(`${baseUrl}/reservations`, {
+    const res = await fetch(`${apiBase}/reservations`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
